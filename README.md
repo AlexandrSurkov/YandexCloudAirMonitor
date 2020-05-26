@@ -15,4 +15,5 @@
 }
 
 В качестве эмулятора в статье используется EnvironmentalSensor из https://github.com/AlexandrSurkov/IoTDeviceEmulator
+
 Также эмулятор можно сделать на базе Yandex Cloud Functions
