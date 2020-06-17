@@ -13,23 +13,24 @@ logger.setLevel(logging.INFO)
 
 verboseLogging = eval(os.environ['VERBOSE_LOG']) ## Convert to bool
 
-if  verboseLogging:
-    logger.info('Loading my-function')
+def logInfo(text):
+   if verboseLogging:
+     logger.Info(text)
+
+logInfo('Loading my-function')
 
 def pushMetrics(iamToken, msg):
     folderId = os.environ["METRICS_FOLDER_ID"]
     metrics = makeAllMetrics(msg)
-    if verboseLogging:
-        logger.info(f'Metrics request: {metrics}')
+    logInfo(f'Metrics request: {metrics}')
     resp = requests.post(
         METRICS_PUSH_URL,
         json=metrics,
         headers={"Authorization": "Bearer " + iamToken},
         params={"folderId": folderId, "service": METRICS_SERVICE}
     )
-    if verboseLogging:
-        logger.info(f'Metrics response: {resp}')
-        logger.info(f'Metrics response.content: {resp.content}')
+    logInfo(f'Metrics response: {resp}')
+    logInfo(f'Metrics response.content: {resp.content}')
 
 """
 Imput Json format is:
@@ -76,16 +77,14 @@ def makeMetric(name, value):
 def msgHandler(event, context):
     statusCode = 500  ## Error response by default
 
-    if verboseLogging:
-        logger.info(event)
-        logger.info(context)
+    logInfo(event)
+    logInfo(context)
 
     msg_payload = json.dumps(event["messages"][0])
     json_msg = json.loads(msg_payload)
     event_payload = base64.b64decode(json_msg["details"]["payload"])
 
-    if verboseLogging:
-        logger.info(f'Event: {event_payload}')
+    logInfo(f'Event: {event_payload}')
 
     payload_json = json.loads(event_payload)
 
