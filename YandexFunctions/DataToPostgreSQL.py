@@ -36,7 +36,15 @@ def makeInsertStatement(event_id, payload_json, table_name):
     insert=  f"""INSERT INTO {table_name} (event_id, device_id, event_datetime,
                  humidity, carbon_dioxide, pressure, temperature) 
                  VALUES('{event_id}','{event['DeviceId']}', '{event['TimeStamp']}',
-                 {event['Values'][0]['Value']}, {event['Values'][1]['Value']}, {event['Values'][2]['Value']}, {event['Values'][3]['Value']})"""
+                 {event['Values'][0]['Value']}, {event['Values'][1]['Value']}, {event['Values'][2]['Value']}, {event['Values'][3]['Value']})
+      			 ON CONFLICT (event_id) DO UPDATE 
+                    SET device_id = '{event['DeviceId']}',
+        			SET event_datetime = '{event['TimeStamp']}',
+            		SET humidity = {event['Values'][0]['Value']},
+              		SET carbon_dioxide = {event['Values'][1]['Value']},
+              		SET pressure = {event['Values'][2]['Value']},
+              		SET temperature = {event['Values'][3]['Value']};
+             """
 
     return insert
 
@@ -56,13 +64,13 @@ Imput Json format is:
 def makeCreateTableStatement(table_name):
 
     statement = f"""CREATE TABLE public.{table_name} (
-    event_id varchar(24) not null,
-    device_id varchar(50) not null,
-    event_datetime timestamptz not null,
-    humidity float8 null,
-    carbon_dioxide float8 null,
-    pressure float8 null,
-    temperature float8 null
+    event_id text not null,
+    device_id text not null,
+    event_datetime timestampt not null,
+    humidity float null,
+    carbon_dioxide float null,
+    pressure float null,
+    temperature float null
     );"""
     return statement
 
@@ -104,6 +112,7 @@ def msgHandler(event, context):
     try:
         cursor.execute(sql)
         statusCode = 200
+        conn.commit() # <- We MUST commit to reflect the inserted data
     except psycopg2.errors.UndefinedTable as error: ## table not exist - create and repeate insert
         conn.rollback()
         logger.error( error)        
@@ -112,13 +121,11 @@ def msgHandler(event, context):
         conn.commit()
         cursor.execute(sql)
         statusCode = 200
+        conn.commit() # <- We MUST commit to reflect the inserted data
     except Exception as error:
         logger.error( error)
-    conn.commit() # <- We MUST commit to reflect the inserted data
     cursor.close()
     conn.close()
-
-    
 
     return {
         'statusCode': statusCode,
