@@ -26,18 +26,6 @@ String topicEvents = String("$devices/")+String(yandexIoTCoreDeviceId)+String("/
 
 #define TX 12
 #define RX 14
-//
-//// assign the ESP8266 pins to arduino pins
-//#define D1 5 - scl
-//#define D2 4 - sda
-//#define D4 2 - sdo
-//#define D3 0 - csb
-//
-//// assign the SPI bus to pins
-//#define BME_SCK D1
-//#define BME_MISO D4
-//#define BME_MOSI D2
-//#define BME_CS D3
 
 // assign the SPI bus to pins
 #define BME_SCK 4  //SCL pin
