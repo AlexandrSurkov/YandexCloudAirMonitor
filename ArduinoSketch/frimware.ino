@@ -23,7 +23,7 @@ const int mqttport=8883;
 String topicCommands = String("$devices/")+String(yandexIoTCoreDeviceId)+String("/commands/#");
 String topicEvents = String("$devices/")+String(yandexIoTCoreDeviceId)+String("/events/");
 
-
+// assign the SERIAL PORT to pins
 #define TX 12
 #define RX 14
 
@@ -59,6 +59,7 @@ char temperatreChars[10];
 char pressureChars[10];
 char carbonDioxideChars[10];
 
+//Yandex IoT Core RootCA
 const char* test_root_ca = \
 "-----BEGIN CERTIFICATE-----\n \
 MIIFGTCCAwGgAwIBAgIQJMM7ZIy2SYxCBgK7WcFwnjANBgkqhkiG9w0BAQ0FADAf\
@@ -90,7 +91,6 @@ yjRCkJ0YagpeLxfV1l1ZJZaTPZvY9+ylHnWHhzlq0FzcrooSSsp4i44DB2K7O2ID\
 Pj78bnC5yCw8P5YylR45LdxLzLO68unoXOyFz1etGXzszw8lJI9LNubYxk77mK8H\
 LpuQKbSbIERsmR+QqQ==\
 -----END CERTIFICATE-----\n";
-
 
 WiFiClientSecure  net;
 PubSubClient client(net);
@@ -130,9 +130,7 @@ void readCO2() {
   
   SENSOR_SERIAL.write(cmd, 9);
   memset(response, 0, 7);
-
-  DEBUG_SERIAL.println("CO2: CMD Write");
-  
+  DEBUG_SERIAL.println("CO2: CMD Write");  
   // Looking for packet start
   while(SENSOR_SERIAL.available() && (!header_found)) {
     byte rb = SENSOR_SERIAL.read();
@@ -140,18 +138,15 @@ void readCO2() {
     if(rb == 0xff ) {
             if(SENSOR_SERIAL.read() == 0x86 ) header_found = true;
     }
-  }
-  
+  }  
   if (header_found) {
-    SENSOR_SERIAL.readBytes(response, 7);
-  
+    SENSOR_SERIAL.readBytes(response, 7);  
     byte crc = 0x86;
     for (char i = 0; i < 6; i++) {
             crc+=response[i];
     }
     crc = 0xff - crc;
-    crc++;
-  
+    crc++;  
     if ( !(response[6] == crc) ) {
             DEBUG_SERIAL.println("CO2: CRC error: " + String(crc) + " / "+ String(response[6]));
     } else {
@@ -170,46 +165,36 @@ void messageReceived(char* topic, byte* payload, unsigned int length) {
   String topicString = String(topic);
   DEBUG_SERIAL.print("Message received. Topic: ");
   DEBUG_SERIAL.println(topicString.c_str());
-
   String payloadStr = "";
   for (int i=0;i<length;i++)
   {
     payloadStr += (char*)payload;
   }
-  DEBUG_SERIAL.println(payloadStr);
-  
+  DEBUG_SERIAL.println(payloadStr);  
   DEBUG_SERIAL.print("Payload: ");
   DEBUG_SERIAL.println(payloadStr);
 }
 
-void sendMeasurements() {
-  
+void sendMeasurements() {  
   // Read data
   // Temperature
-  t = bme.readTemperature();
-  
+  t = bme.readTemperature();  
   // Humidity
-  h = bme.readHumidity();
-  
+  h = bme.readHumidity();  
   // Pressure (in mmHg)
-  p = bme.readPressure() * 760.0 / 101325;
-  
+  p = bme.readPressure() * 760.0 / 101325;  
   // CO2
   readCO2();
-
   // Write to debug console
   DEBUG_SERIAL.println("H: " + String(h) + " %");
   DEBUG_SERIAL.println("T: " + String(t) + " C");
   DEBUG_SERIAL.println("P: " + String(p) + " mmHg");
-  DEBUG_SERIAL.println("CO2: " + String(co2) + " ppm");
-  
+  DEBUG_SERIAL.println("CO2: " + String(co2) + " ppm");  
   // Send to server  
   sprintf(humidityChars, "%f", h);
   sprintf(temperatreChars, "%f", t);
   sprintf(pressureChars, "%f", p);
   sprintf(carbonDioxideChars, "%d", co2);
-
-
   String message = String("{")+
     String("\"DeviceId\":\"") + yandexIoTCoreDeviceId + String("\",")+
     String("\"Values\":[")+
@@ -219,9 +204,7 @@ void sendMeasurements() {
         String("{\"Type\":\"Float\",\"Name\":\"Temperature\",\"Value\":\"") + String(t) + String("\"}")+
         String("]")+
   String("}");
-
   DEBUG_SERIAL.println("Publish "+ message);
-
   if (client.publish(topicEvents.c_str(), message.c_str())) {
     DEBUG_SERIAL.println("Publish ok");
   }
@@ -231,31 +214,23 @@ void sendMeasurements() {
 }
 
 void setup() {
-  // put your setup code here, to run once:
-
   DEBUG_SERIAL.begin(115200);
-
-  DEBUG_SERIAL.println("Init device");
-  
-  SENSOR_SERIAL.begin(9600, SWSERIAL_8N1, RX, TX, false, 256, 0);
-  
+  DEBUG_SERIAL.println("Init device");  
+  SENSOR_SERIAL.begin(9600, SWSERIAL_8N1, RX, TX, false, 256, 0);  
   // Init Pressure/Temperature sensor
   if (!bme.begin()) {
     DEBUG_SERIAL.println("Could not find a valid BMe280 sensor, check wiring!");
-  }
-        
+  }        
   delay(10);
   DEBUG_SERIAL.println("Device started");
-
   WiFi.begin(ssid, password);
-
   client.setServer(mqttserver, mqttport);
   client.setCallback(messageReceived);
+  client.setBufferSize(1024);
+  client.setKeepAlive(15);
   connect();
-
   // Setup a function to be called every 10 second
-  timer.setInterval(10000L, sendMeasurements);
-  
+  timer.setInterval(10000L, sendMeasurements);  
   sendMeasurements();
 }
 
