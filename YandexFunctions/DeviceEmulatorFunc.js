@@ -5,19 +5,9 @@ const {
     DeviceDataService,
 } = require("yandex-cloud/api/iot/devices/v1");
  
-function ISODateString(d){
- function pad(n){return n<10 ? '0'+n : n}
- return d.getUTCFullYear()+'-'
-      + pad(d.getMonth()+1)+'-'
-      + pad(d.getDate())+'T'
-      + pad(d.getHours())+':'
-      + pad(d.getMinutes())+':'
-      + pad(d.getSeconds())+'Z'}
- 
 function publishToDevice(deviceDataService) {
     
     const deviceId = process.env.DEVICE_ID;
-    const timeStamp = ISODateString(new Date());
     const humiditySensorValue = (parseFloat(process.env.TEMPERATURE_SENSOR_VALUE) + Math.random()).toFixed(2);
     const temperatureSensorValue = (parseFloat(process.env.HUMIDITY_SENSOR_VALUE) + Math.random()).toFixed(2);
     const pressureSensorValue = (parseFloat(process.env.PRESSURE_SENSOR_VALUE) + Math.random()).toFixed(2);
@@ -33,7 +23,6 @@ function publishToDevice(deviceDataService) {
         data: Buffer.from(
             `{
             "DeviceId":"${deviceId}",
-            "TimeStamp":"${timeStamp}",
             "Values":[
                 {"Type":"Float","Name":"Humidity","Value":"${humiditySensorValue}"},
                 {"Type":"Float","Name":"CarbonDioxide","Value":"${carbonDioxideSensorValue}"},
